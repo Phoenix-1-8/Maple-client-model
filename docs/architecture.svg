@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 760" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0f14"/>
+      <stop offset="1" stop-color="#070b0f"/>
+    </linearGradient>
+    <style>
+      .lbl{fill:#e7eef3;font-size:14px;font-weight:600}
+      .sub{fill:#8aa0ad;font-size:11px}
+      .tier{fill:#5b6b78;font-size:12px;font-weight:700;letter-spacing:1.5px}
+      .box{rx:12;stroke-width:1.2}
+      .green{fill:#0e1a12;stroke:#22c55e55}
+      .amber{fill:#1a160e;stroke:#f59e0b55}
+      .sky{fill:#0e161a;stroke:#38bdf855}
+      .slate{fill:#121a21;stroke:#1e2a33}
+      .pill{fill:#0e1419;stroke:#1e2a33}
+      . chip{fill:#e7eef3;font-size:11px}
+      .arrow{stroke:#2c3a44;stroke-width:1.6;fill:none;marker-end:url(#ah)}
+    </style>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#3a4a55"/>
+    </marker>
+  </defs>
+
+  <rect width="1180" height="760" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="40" y="48" fill="#fff" font-size="22" font-weight="700">🍁 Maple Store — AI Department</text>
+  <text x="40" y="70" class="sub">Continuous pre-owned iPhone market intelligence · India + Dubai · iPhone 13–17</text>
+
+  <!-- TIER 1: Data Collection -->
+  <text x="40" y="116" class="tier">DATA COLLECTION LAYER</text>
+  <g>
+    <rect x="40" y="128" width="1100" height="118" rx="14" class="slate"/>
+    <!-- scrapers -->
+    <g>
+      <rect x="60" y="150" width="120" height="34" rx="9" class="green"/><text x="120" y="172" text-anchor="middle" class="lbl">Cashify</text>
+      <rect x="190" y="150" width="120" height="34" rx="9" class="green"/><text x="250" y="172" text-anchor="middle" class="lbl">ControlZ</text>
+      <rect x="320" y="150" width="100" height="34" rx="9" class="sky"/><text x="370" y="172" text-anchor="middle" class="lbl">OLX</text>
+      <rect x="430" y="150" width="100" height="34" rx="9" class="sky"/><text x="480" y="172" text-anchor="middle" class="lbl">Quikr</text>
+      <rect x="540" y="150" width="150" height="34" rx="9" class="sky"/><text x="615" y="172" text-anchor="middle" class="lbl">Facebook Mktpl.</text>
+      <rect x="700" y="150" width="140" height="34" rx="9" class="amber"/><text x="770" y="172" text-anchor="middle" class="lbl">Apple Trade-In</text>
+      <rect x="850" y="150" width="130" height="34" rx="9" class="sky"/><text x="915" y="172" text-anchor="middle" class="lbl">Dubai Resale</text>
+      <rect x="990" y="150" width="130" height="34" rx="9" class="pill"/><text x="1055" y="171" text-anchor="middle" class="sub">+ extensible</text>
+    </g>
+    <text x="60" y="214" class="sub">Modular Playwright scrapers · BrightData-compatible (Web Unlocker / proxy)</text>
+    <text x="60" y="232" class="sub">Resilience contract: live scrape → on block → deterministic mock fallback (always functional)</text>
+  </g>
+
+  <!-- arrows down -->
+  <path class="arrow" d="M590,246 L590,286"/>
+
+  <!-- TIER 2: Storage / Queue -->
+  <text x="40" y="312" class="tier">STORAGE &amp; ORCHESTRATION</text>
+  <g>
+    <rect x="40" y="324" width="350" height="92" rx="14" class="slate"/>
+    <text x="60" y="352" class="lbl">PostgreSQL</text>
+    <text x="60" y="372" class="sub">listings · market_daily (index) · device_daily</text>
+    <text x="60" y="392" class="sub">SQLAlchemy · SQLite-compatible for local demo</text>
+
+    <rect x="410" y="324" width="300" height="92" rx="14" class="slate"/>
+    <text x="430" y="352" class="lbl">Redis Queue + Worker</text>
+    <text x="430" y="372" class="sub">scheduled scrape → recompute cycle</text>
+    <text x="430" y="392" class="sub">sync fallback when Redis absent</text>
+
+    <rect x="730" y="324" width="410" height="92" rx="14" class="slate"/>
+    <text x="750" y="352" class="lbl">Normalization &amp; Config</text>
+    <text x="750" y="372" class="sub">competitor grade → Maple grade (Almost New/Superb/Good/Fair)</text>
+    <text x="750" y="392" class="sub">premiums · costs · weights · city &amp; platform indices (configurable)</text>
+  </g>
+
+  <path class="arrow" d="M590,416 L590,456"/>
+
+  <!-- TIER 3: AI Agents -->
+  <text x="40" y="482" class="tier">AI AGENTS  ·  THE DEPARTMENT</text>
+  <g>
+    <rect x="40" y="494" width="212" height="96" rx="14" class="green"/>
+    <text x="58" y="522" class="lbl">Competitor Intel</text>
+    <text x="58" y="542" class="sub">lowest · median</text>
+    <text x="58" y="560" class="sub">premium sellers</text>
+    <text x="58" y="578" class="sub">price movement</text>
+
+    <rect x="266" y="494" width="212" height="96" rx="14" class="green"/>
+    <text x="284" y="522" class="lbl">Market Pricing</text>
+    <text x="284" y="542" class="sub">fair value (wtd avg,</text>
+    <text x="284" y="560" class="sub">recency, condition)</text>
+    <text x="284" y="578" class="sub">buy / sell prices</text>
+
+    <rect x="492" y="494" width="212" height="96" rx="14" class="amber"/>
+    <text x="510" y="522" class="lbl">Arbitrage</text>
+    <text x="510" y="542" class="sub">inter-city spreads</text>
+    <text x="510" y="560" class="sub">buy-low → sell-high</text>
+    <text x="510" y="578" class="sub">opportunity value</text>
+
+    <rect x="718" y="494" width="212" height="96" rx="14" class="sky"/>
+    <text x="736" y="522" class="lbl">Inventory</text>
+    <text x="736" y="542" class="sub">demand signals</text>
+    <text x="736" y="560" class="sub">underpriced / oversupply</text>
+    <text x="736" y="578" class="sub">gaps · KPIs</text>
+
+    <rect x="944" y="494" width="196" height="96" rx="14" class="sky"/>
+    <text x="962" y="522" class="lbl">Dubai Expansion</text>
+    <text x="962" y="542" class="sub">India ⇄ Dubai spread</text>
+    <text x="962" y="560" class="sub">landed-cost margin</text>
+    <text x="962" y="578" class="sub">export score</text>
+  </g>
+
+  <path class="arrow" d="M590,590 L590,628"/>
+
+  <!-- TIER 4: API + Frontend -->
+  <text x="40" y="654" class="tier">DELIVERY</text>
+  <g>
+    <rect x="40" y="666" width="520" height="74" rx="14" class="slate"/>
+    <text x="60" y="694" class="lbl">FastAPI</text>
+    <text x="60" y="714" class="sub">/market · /agents · /listings · /config · /scrape · OpenAPI docs (/docs)</text>
+    <text x="60" y="731" class="sub">metrics: margin lift · turns · accuracy · coverage · arbitrage value</text>
+
+    <rect x="580" y="666" width="560" height="74" rx="14" class="slate"/>
+    <text x="600" y="694" class="lbl">Next.js Dashboards (TypeScript · Tailwind · Recharts)</text>
+    <text x="600" y="714" class="sub">Executive · Competitor · Dubai · Inventory</text>
+    <text x="600" y="731" class="sub">Dockerized · investor-demo ready</text>
+  </g>
+</svg>

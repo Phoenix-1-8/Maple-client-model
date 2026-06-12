@@ -1,0 +1,13 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36
+pydantic==2.10.4
+psycopg2-binary==2.9.10
+redis==5.2.1
+python-dotenv==1.0.1
+
+# Live scraping (OPTIONAL, not required for the demo — mock fallback works
+# without it). To wire it up, uncomment, then:
+#   pip install playwright && python -m playwright install chromium
+# and implement fetch_raw() in the scraper adapters (skeleton in scrapers/cashify.py).
+# playwright==1.49.1

@@ -1,0 +1,12 @@
+.venv
+venv
+__pycache__
+*.pyc
+*.db
+maple.db
+mock_dataset
+maple_config.json
+.env
+.git
+Dockerfile
+.dockerignore

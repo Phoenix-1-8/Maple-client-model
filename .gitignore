@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+maple.db
+backend/maple_config.json
+backend/mock_dataset/
+
+# Node / Next
+node_modules/
+.next/
+out/
+.env.local
+npm-debug.log*
+
+# Env
+.env
+
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/

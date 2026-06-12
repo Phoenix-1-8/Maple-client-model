@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(34, 197, 94, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(245, 158, 11, 0.05), transparent 55%), #070b0f;
+  color: #e7eef3;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: #1e2a33;
+}
+
+::selection {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+/* thin scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2a33;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-panel-line bg-panel shadow-panel;
+  }
+  .panel-soft {
+    @apply rounded-xl border border-panel-line bg-panel-soft;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-panel-line bg-panel-soft px-2.5 py-1 text-xs font-medium text-slate-300;
+  }
+  .stat-num {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+  .th {
+    @apply px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500;
+  }
+  .td {
+    @apply px-3 py-2.5 text-sm text-slate-200;
+  }
+  .row-hover {
+    @apply transition-colors hover:bg-white/[0.025];
+  }
+}

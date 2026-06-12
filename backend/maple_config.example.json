@@ -1,0 +1,46 @@
+{
+  "_comment": "Copy to maple_config.json (or set MAPLE_CONFIG_FILE) to override business rules. Every field is optional; only what you set is overridden.",
+
+  "pricing": {
+    "brand_premium_pct": 0.015,
+    "warranty_premium_pct": 0.035,
+    "maple_trust_premium_pct": 0.03,
+    "target_margin_pct": 0.14,
+    "refurbishment_cost": 1200.0,
+    "logistics_cost": 450.0,
+    "warranty_reserve": 800.0,
+    "recency_half_life_days": 21.0,
+    "trim_fraction": 0.1,
+    "import_duty_pct": 0.18,
+    "cross_border_logistics": 1500.0,
+    "min_arbitrage_spread_pct": 0.06,
+    "min_city_samples": 2
+  },
+
+  "baselines": {
+    "baseline_gross_margin_pct": 0.11,
+    "baseline_inventory_turns_per_year": 6.0,
+    "target_inventory_turns_per_year": 8.4,
+    "baseline_purchase_accuracy": 0.74,
+    "baseline_pricing_accuracy": 0.79,
+    "target_platform_count": 14,
+    "assumed_monthly_units": 900
+  },
+
+  "condition_multipliers": {
+    "Almost New": 1.06,
+    "Superb": 1.0,
+    "Good": 0.9,
+    "Fair": 0.78
+  },
+
+  "grade_map": {
+    "mint": "Almost New",
+    "excellent": "Superb",
+    "good": "Good",
+    "average": "Fair",
+    "scratched": "Fair"
+  },
+
+  "aed_to_inr": 23.0
+}
