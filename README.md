@@ -191,6 +191,7 @@ The architecture is built to grow:
 - ✅ Database schema (`backend/app/models.py`)
 - ✅ Docker setup (`docker-compose.yml`, per-service Dockerfiles)
 - ✅ Mock dataset (`python -m scripts.export_mock_dataset`)
+- ✅ Pre-built DB fixture, loaded on startup (`backend/app/fixtures/seed_market.json`, rebuild with `make build-fixture`)
 - ✅ API documentation (`docs/API.md` + live `/docs`)
 - ✅ Setup guide (`docs/SETUP.md`)
 - ✅ Architecture diagram (`docs/architecture.svg` + mermaid)

@@ -31,6 +31,10 @@ services:
       DATABASE_URL: postgresql+psycopg2://maple:maple@db:5432/maple
       REDIS_URL: redis://redis:6379/0
       SEED_ON_STARTUP: "true"
+      # Pinned so the loaded fixture's baked dates line up with the app's
+      # "as-of" date (recency weighting, trend anchoring). Matches the fixture
+      # built by `make build-fixture`.
+      MAPLE_AS_OF: "2026-06-11"
       CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
     ports:
       - "8000:8000"
@@ -47,6 +51,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://maple:maple@db:5432/maple
       REDIS_URL: redis://redis:6379/0
       SEED_ON_STARTUP: "false"
+      MAPLE_AS_OF: "2026-06-11"
     depends_on:
       backend:
         condition: service_started

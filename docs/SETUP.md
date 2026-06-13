@@ -22,8 +22,10 @@ Then open:
 | API docs (Swagger) | http://localhost:8000/docs |
 | API health | http://localhost:8000/api/health |
 
-The backend seeds a full mock market on first boot. The worker performs an
-initial market refresh and then waits for queued jobs.
+On first boot the backend loads a **pre-built market fixture committed to the
+repo** (`backend/app/fixtures/seed_market.json`) into Postgres — so every
+machine gets the exact same, fully-populated demo with no runtime data
+generation. The worker shares that database and waits for queued jobs.
 
 To stop and wipe data:
 ```bash
@@ -45,12 +47,19 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API comes up at http://localhost:8000 and auto-seeds `maple.db` (SQLite).
-For a fully reproducible demo, pin the date:
+The API comes up at http://localhost:8000 and populates `maple.db` (SQLite)
+from the same committed fixture used by Docker, so the local and Docker demos
+are identical. For a fully reproducible demo, pin the date:
 
 ```bash
 MAPLE_AS_OF=2026-06-11 uvicorn app.main:app --port 8000
 ```
+
+> **Pre-built data fixture.** Seeding loads `app/fixtures/seed_market.json`
+> instead of generating data at runtime. To regenerate it (after changing the
+> catalog, config, or generator), run `make build-fixture` (or
+> `python -m scripts.build_seed_fixture`). To force on-the-fly generation
+> instead of the fixture, set `MAPLE_SEED_SOURCE=generate`.
 
 > Live scraping is optional and **not wired in this pilot** — scrapers always
 > fall back to deterministic mock data, so nothing extra is needed for the demo.

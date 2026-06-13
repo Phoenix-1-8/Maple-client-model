@@ -1,6 +1,6 @@
 # Maple Store AI Department — convenience targets
 
-.PHONY: up down backend frontend seed refresh dataset install-backend install-frontend
+.PHONY: up down backend frontend seed refresh dataset build-fixture install-backend install-frontend
 
 # ---- Docker ----
 up:            ## Build & run the full stack
@@ -32,3 +32,6 @@ refresh:       ## Re-scrape (mock fallback) and replace listings
 
 dataset:       ## Export the mock dataset to backend/mock_dataset/
 	cd backend && . .venv/bin/activate && python -m scripts.export_mock_dataset --out mock_dataset
+
+build-fixture: ## Rebuild the committed pre-built DB fixture (app/fixtures/seed_market.json)
+	cd backend && . .venv/bin/activate && python -m scripts.build_seed_fixture

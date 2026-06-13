@@ -37,7 +37,7 @@ class Listing(Base):
     asking_price_native: Mapped[float] = mapped_column(Float)   # original currency
     currency: Mapped[str] = mapped_column(String(4), default="INR")
 
-    seller_type: Mapped[str] = mapped_column(String(20), default="individual")
+    seller_type: Mapped[str] = mapped_column(String(40), default="individual")
     listing_date: Mapped[date] = mapped_column(Date, index=True)
     url: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
