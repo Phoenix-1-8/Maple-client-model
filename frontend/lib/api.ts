@@ -28,6 +28,8 @@ export const endpoints = {
   metrics: "/market/metrics",
   index: "/market/index",
   pricing: "/market/pricing",
+  devices: "/devices",
+  device: (sku: string) => `/devices/${sku}`,
   competitor: "/agents/competitor",
   arbitrage: "/agents/arbitrage",
   inventory: "/agents/inventory",

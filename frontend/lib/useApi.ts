@@ -11,13 +11,20 @@ export interface ApiState<T> {
 }
 
 // Fetch a backend path on mount; `refreshKey` re-fetches when it changes.
-export function useApi<T = any>(path: string, refreshKey: number = 0): ApiState<T> {
+// Pass `null` as the path to skip fetching (e.g. nothing selected yet).
+export function useApi<T = any>(path: string | null, refreshKey: number = 0): ApiState<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     let active = true;
+    if (path === null) {
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
     setLoading(true);
     setError(null);
     apiGet<T>(path)

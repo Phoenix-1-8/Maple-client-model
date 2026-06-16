@@ -14,6 +14,7 @@ from ..config import get_config
 from ..models import MarketDaily
 from .arbitrage import ArbitrageAgent
 from .competitor import CompetitorIntelligenceAgent
+from .device_pricing import DevicePricingAgent
 from .dubai import DubaiExpansionAgent
 from .inventory import InventoryAgent
 from .market_pricing import MarketPricingAgent
@@ -22,6 +23,7 @@ from .market_pricing import MarketPricingAgent
 AGENTS = {
     CompetitorIntelligenceAgent.name: CompetitorIntelligenceAgent,
     MarketPricingAgent.name: MarketPricingAgent,
+    DevicePricingAgent.name: DevicePricingAgent,
     ArbitrageAgent.name: ArbitrageAgent,
     InventoryAgent.name: InventoryAgent,
     DubaiExpansionAgent.name: DubaiExpansionAgent,

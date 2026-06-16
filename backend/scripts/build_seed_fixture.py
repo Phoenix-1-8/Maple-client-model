@@ -97,6 +97,8 @@ _LISTING_FIELDS = (
     "platform", "region", "sku", "series", "model", "variant", "storage",
     "battery_health", "condition", "raw_condition", "city",
     "asking_price", "asking_price_native", "currency", "seller_type",
+    "color", "listing_title", "seller_name", "seller_rating", "seller_reviews",
+    "warranty", "accessories", "lock_status", "verified", "negotiable", "views",
     "listing_date", "url",
 )
 _MARKET_FIELDS = (

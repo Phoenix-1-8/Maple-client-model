@@ -24,7 +24,7 @@ import random
 import zlib
 from datetime import date, timedelta
 
-from .catalog import Device, all_devices, device_age_months
+from .catalog import Device, ExtraDevice, EXTRA_DEVICES, all_devices, iphone_devices, device_age_months
 from .config import (
     DUBAI_CITIES,
     INDIA_CITIES,
@@ -64,6 +64,119 @@ _PLATFORM_SELLER = {
     "apple_tradein": "oem_program",
     "dubai_resale": "individual",
 }
+
+# --------------------------------------------------------------------------- #
+# Publicly-scrapable listing detail (colours, warranty, seller, accessories…)
+# These are derived from a per-listing *local* RNG seeded off the (already
+# computed) listing URL, so they are fully deterministic but DO NOT consume the
+# shared market RNG stream — prices and the index stay byte-for-byte identical.
+# --------------------------------------------------------------------------- #
+_PRO_COLORS: dict[int, list[str]] = {
+    13: ["Graphite", "Silver", "Gold", "Sierra Blue"],
+    14: ["Space Black", "Silver", "Gold", "Deep Purple"],
+    15: ["Natural Titanium", "Blue Titanium", "White Titanium", "Black Titanium"],
+    16: ["Black Titanium", "Natural Titanium", "White Titanium", "Desert Titanium"],
+    17: ["Silver", "Cosmic Orange", "Deep Blue", "Black Titanium"],
+}
+_STD_COLORS: dict[int, list[str]] = {
+    13: ["Midnight", "Starlight", "Blue", "Pink", "Green", "(PRODUCT)RED"],
+    14: ["Midnight", "Starlight", "Blue", "Purple", "Yellow", "(PRODUCT)RED"],
+    15: ["Black", "Blue", "Green", "Yellow", "Pink"],
+    16: ["Black", "White", "Pink", "Teal", "Ultramarine"],
+    17: ["Black", "Lavender", "Sage", "Mist Blue", "White"],
+}
+
+_FAMILY_COLORS = {
+    "iPad": ["Space Gray", "Silver", "Blue", "Pink", "Purple", "Starlight", "Yellow"],
+    "Mac": ["Midnight", "Starlight", "Space Gray", "Silver", "Space Black"],
+    "Watch": ["Midnight", "Starlight", "Silver", "Jet Black", "Rose Gold", "Natural Titanium"],
+    "AirPods": ["White"],
+}
+
+_SELLER_FIRST = [
+    "Rahul", "Priya", "Amit", "Sneha", "Vikram", "Anjali", "Karthik", "Neha",
+    "Arjun", "Pooja", "Rohan", "Divya", "Sandeep", "Meera", "Faisal", "Aisha",
+]
+_SELLER_LAST_INITIAL = list("SKMRPGVDTNCBJ")
+_UAE_SELLER_FIRST = ["Omar", "Layla", "Hassan", "Fatima", "Yusuf", "Mariam", "Bilal", "Zara"]
+
+_MARKET_ACCESSORIES = [
+    "Full box & accessories", "Box, charger & cable", "Original box only",
+    "Phone + case & charger", "Phone only (no box)",
+]
+_REFURB_ACCESSORIES = ["Box, cable & adapter", "Box & cable", "Unboxed (cable only)"]
+
+
+def _colors_for(family: str, series: int | None, variant: str | None) -> list[str]:
+    """Return color options for a device. For iPhone, use series/variant tables; else use family colors."""
+    if family == "iPhone":
+        table = _PRO_COLORS if variant in ("Pro", "Pro Max") else _STD_COLORS
+        return table.get(series, _STD_COLORS[16])
+    return _FAMILY_COLORS.get(family, ["White"])
+
+
+def _listing_detail(
+    *, platform, device, condition, raw_grade, storage, age_days, lrng
+) -> dict:
+    """Synthesize the extra fields a scraper would lift off a real listing page."""
+    family = getattr(device, 'family', 'iPhone')
+    series = getattr(device, 'series', None)
+    variant = getattr(device, 'variant', None)
+    color = lrng.choice(_colors_for(family, series, variant))
+    role = platform.role
+
+    if role == "recommerce":
+        seller_name = f"{platform.name} Certified"
+        seller_rating = round(lrng.uniform(4.4, 4.9), 1)
+        seller_reviews = lrng.randint(800, 16000)
+        warranty = f"6-month {platform.name} warranty"
+        accessories = lrng.choice(_REFURB_ACCESSORIES)
+        verified = True
+        negotiable = False
+        views = lrng.randint(200, 9000)
+        title = f"Refurbished {device.model} {storage} {color} — {raw_grade} grade"
+    elif role == "tradein":
+        seller_name = platform.name
+        seller_rating = 5.0
+        seller_reviews = 0
+        warranty = "OEM trade-in quote"
+        accessories = "—"
+        verified = True
+        negotiable = False
+        views = 0
+        title = f"{device.model} {storage} — instant trade-in quote"
+    else:  # marketplace
+        pool = _UAE_SELLER_FIRST if platform.region == "AE" else _SELLER_FIRST
+        seller_name = f"{lrng.choice(pool)} {lrng.choice(_SELLER_LAST_INITIAL)}."
+        seller_rating = round(lrng.uniform(3.7, 4.9), 1)
+        seller_reviews = lrng.randint(2, 240)
+        # Newer flagships sometimes still carry residual Apple warranty.
+        if device.series >= 16 and lrng.random() < 0.35:
+            warranty = f"Apple warranty · {lrng.randint(1, 9)}mo left"
+        elif lrng.random() < 0.2:
+            warranty = "Seller warranty · 15 days"
+        else:
+            warranty = "No warranty"
+        accessories = lrng.choice(_MARKET_ACCESSORIES)
+        verified = lrng.random() < 0.35
+        negotiable = lrng.random() < 0.8
+        views = lrng.randint(40, 4200)
+        tag = " (Negotiable)" if negotiable else ""
+        title = f"{device.model} {storage} {color} | {raw_grade}{tag}"
+
+    return {
+        "color": color,
+        "listing_title": title,
+        "seller_name": seller_name,
+        "seller_rating": seller_rating,
+        "seller_reviews": seller_reviews,
+        "warranty": warranty,
+        "accessories": accessories,
+        "lock_status": "Factory Unlocked",
+        "verified": verified,
+        "negotiable": negotiable,
+        "views": views,
+    }
 
 
 def depreciation(age_months: float) -> float:
@@ -161,7 +274,7 @@ def generate_platform_listings(
     if platform is None:
         return []
     listings: list[dict] = []
-    for device in all_devices():
+    for device in iphone_devices():
         # Dubai resale skews to newer flagships; skip oldest series there.
         if platform.key == "dubai_resale" and device.series <= 13:
             continue
@@ -199,6 +312,21 @@ def _make_listing(cfg, device, platform, true_val, as_of, rng) -> dict:
     age_days = int(rng.triangular(0, 45, 6))  # recency-skewed
     listing_date = as_of - timedelta(days=age_days)
 
+    url = f"https://demo.maple.local/{platform.key}/{device.sku}/{rng.randint(10000, 99999)}"
+
+    # Per-listing deterministic detail, seeded off the (already-drawn) URL so it
+    # never touches the shared market RNG stream (keeps prices/index identical).
+    lrng = random.Random(zlib.crc32(url.encode()))
+    detail = _listing_detail(
+        platform=platform,
+        device=device,
+        condition=condition,
+        raw_grade=raw_grade,
+        storage=device.storage,
+        age_days=age_days,
+        lrng=lrng,
+    )
+
     return {
         "platform": platform.key,
         "region": platform.region,
@@ -216,7 +344,8 @@ def _make_listing(cfg, device, platform, true_val, as_of, rng) -> dict:
         "currency": platform.currency,
         "seller_type": _PLATFORM_SELLER.get(platform.key, "individual"),
         "listing_date": listing_date,
-        "url": f"https://demo.maple.local/{platform.key}/{device.sku}/{rng.randint(10000, 99999)}",
+        "url": url,
+        **detail,
     }
 
 
@@ -235,7 +364,7 @@ def generate_history(
     days = max(1, cfg.infra.history_days)
     sentiment = _sentiment_series(days, rng)
     start = as_of - timedelta(days=days - 1)
-    devices = all_devices()
+    devices = iphone_devices()
 
     device_daily: list[dict] = []
     basket_by_day: list[float] = []
@@ -287,3 +416,46 @@ def generate_history(
 def build_rng(cfg: MapleConfig | None = None) -> random.Random:
     cfg = cfg or get_config()
     return random.Random(cfg.infra.mock_seed)
+
+
+def build_extra_rng(cfg: MapleConfig | None = None) -> random.Random:
+    """Separate RNG for extended devices, so iPhone RNG stream stays identical."""
+    cfg = cfg or get_config()
+    return random.Random(cfg.infra.mock_seed + 1)
+
+
+# Family popularity weights for listing count estimation.
+_FAMILY_POPULARITY = {
+    "iPad": 1.0,
+    "Mac": 0.8,
+    "Watch": 0.7,
+    "AirPods": 0.9,
+}
+
+
+def _extended_listing_count(device: ExtraDevice, platform_key: str, rng: random.Random) -> int:
+    """Estimate listing count for a non-iPhone device."""
+    base = 3.0
+    family_pop = _FAMILY_POPULARITY.get(device.family, 0.8)
+    platform_vol = _PLATFORM_VOLUME.get(platform_key, 0.8)
+    expected = base * family_pop * platform_vol
+    # Add jitter and storage-based variation
+    jitter = rng.uniform(0.6, 1.3)
+    return max(0, int(round(expected * jitter)))
+
+
+def generate_extended_listings(cfg: MapleConfig, as_of: date, rng: random.Random) -> list[dict]:
+    """Generate mock listings for non-iPhone devices (IN region only)."""
+    listings: list[dict] = []
+    for platform in cfg.platforms:
+        # Only include IN-region platforms (skip Dubai for extended devices)
+        if platform.region != "IN":
+            continue
+        for device in EXTRA_DEVICES:
+            true_val = true_superb_value(device, as_of)
+            count = _extended_listing_count(device, platform.key, rng)
+            for _ in range(count):
+                listings.append(
+                    _make_listing(cfg, device, platform, true_val, as_of, rng)
+                )
+    return listings

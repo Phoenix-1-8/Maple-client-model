@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import get_config
@@ -47,5 +47,29 @@ def get_session() -> Iterator[Session]:
 def init_db() -> None:
     # Import models so they register on the metadata before create_all.
     from . import models  # noqa: F401
+
+    # Self-heal schema drift. All tables here are derived from the committed
+    # fixture and re-seeded on startup, so if a persistent DB (e.g. the Docker
+    # Postgres volume) was created with an older model and is now missing
+    # columns, we drop & recreate rather than fail every query. This keeps the
+    # pilot runnable across model changes without a migration tool.
+    inspector = inspect(engine)
+    drift = False
+    for table_name, table in Base.metadata.tables.items():
+        if not inspector.has_table(table_name):
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table_name)}
+        expected = {c.name for c in table.columns}
+        if not expected.issubset(existing):
+            missing = sorted(expected - existing)
+            print(
+                f"[init_db] schema drift on '{table_name}' (missing {missing}); "
+                "recreating tables — data will be re-seeded from the fixture."
+            )
+            drift = True
+            break
+
+    if drift:
+        Base.metadata.drop_all(bind=engine)
 
     Base.metadata.create_all(bind=engine)

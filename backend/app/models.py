@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, Integer, String, Index, func
+from sqlalchemy import Boolean, Date, DateTime, Float, Integer, String, Index, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -38,6 +38,20 @@ class Listing(Base):
     currency: Mapped[str] = mapped_column(String(4), default="INR")
 
     seller_type: Mapped[str] = mapped_column(String(40), default="individual")
+
+    # Publicly-scrapable listing detail (powers the per-device breakdown tab).
+    color: Mapped[str] = mapped_column(String(40), default="")
+    listing_title: Mapped[str] = mapped_column(String(180), default="")
+    seller_name: Mapped[str] = mapped_column(String(60), default="")
+    seller_rating: Mapped[float] = mapped_column(Float, default=0.0)        # 0–5 stars
+    seller_reviews: Mapped[int] = mapped_column(Integer, default=0)
+    warranty: Mapped[str] = mapped_column(String(60), default="")
+    accessories: Mapped[str] = mapped_column(String(80), default="")
+    lock_status: Mapped[str] = mapped_column(String(28), default="Factory Unlocked")
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)          # inspected / certified badge
+    negotiable: Mapped[bool] = mapped_column(Boolean, default=False)
+    views: Mapped[int] = mapped_column(Integer, default=0)
+
     listing_date: Mapped[date] = mapped_column(Date, index=True)
     url: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

@@ -15,20 +15,22 @@ extend into production.
 
 ## What it does
 
-Five specialist agents run continuously over the market and feed four
+Six specialist agents run continuously over the market and feed five
 investor-grade dashboards:
 
 | Agent | Job |
 |---|---|
 | 🛰️ **Competitor Intelligence** | Tracks lowest/median price, premium vs value sellers, price movement, and a platform × series heatmap across Cashify, ControlZ, OLX, Quikr, Facebook, Apple Trade-In, Dubai resale. |
 | 💰 **Market Pricing** | Computes a condition-normalized fair value (weighted average · recency · condition weighting) and recommends **buy & sell** prices for every grade. |
+| 🔍 **Device Pricing** | Breaks every device down **by site**: per-platform lowest/median/highest, spread vs fair value, condition mix, and the full listing feed with all publicly-scrapable detail (colour, battery, warranty, accessories, seller rating, lock status). |
 | 🔀 **Arbitrage** | Finds buy-low/sell-high spreads across Indian cities (e.g. *Hyderabad ₹82.9k → Mumbai ₹95.1k, +14.8%*) and totals the opportunity value. |
 | 📦 **Inventory** | Surfaces high-demand models, underpriced acquisition targets, oversupplied stock and coverage gaps, with pricing recommendations. |
 | ⇄ **Dubai Expansion** | Compares India vs Dubai prices, computes landed-cost margin after duty, and scores export opportunities. |
 
-### The four dashboards
+### The five dashboards
 - **Executive** — market index + movement, headline buy/sell recommendation, KPI strip, top arbitrage, demand & underpriced.
 - **Competitor** — rankings, pricing heatmap, median-by-platform, 60-day trend.
+- **Device Pricing** — searchable device picker, per-site price table, median-by-site chart, buy/sell-by-condition, and a full per-listing detail feed.
 - **Dubai Expansion** — India⇄Dubai spreads, export table, margin waterfall.
 - **Inventory** — demand signals, buy/sell recommendations, underpriced & oversupplied, gaps.
 
@@ -156,11 +158,11 @@ maple-pilot/
 │       ├── metrics.py         # board KPIs
 │       ├── models.py / db.py / seed.py
 │       ├── scrapers/          # 7 adapters + resilient base + registry
-│       ├── agents/            # 5 agents + orchestrator
+│       ├── agents/            # 6 agents + orchestrator
 │       ├── api/               # FastAPI routers
 │       └── workers/           # Redis queue + worker
 ├── frontend/
-│   ├── app/                   # 4 dashboards (App Router)
+│   ├── app/                   # 5 dashboards (App Router)
 │   ├── components/            # Shell, charts, heatmap, UI kit
 │   └── lib/                   # api client, hooks, formatting
 ├── docs/                      # ARCHITECTURE · API · SETUP · diagram

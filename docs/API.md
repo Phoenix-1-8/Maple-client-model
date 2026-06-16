@@ -93,7 +93,7 @@ The same recommendation block for a single SKU (404 if no data).
 ## Agents
 
 ### `GET /agents`
-Lists the five agents.
+Lists the six agents.
 
 ### `GET /agents/competitor`
 `market_lowest`, `market_median`, `competitor_rankings[]` (price_index, position,
@@ -122,6 +122,35 @@ listings, median), `premium_sellers`, `value_sellers`, `price_movement`,
      "net_margin": 9596, "margin_pct": 12.2, "export_opportunity_score": 19.5,
      "direction": "Source in Dubai → sell in India" } ] }
 ```
+
+---
+
+## Devices (per-device price breakdown)
+
+### `GET /devices?region=IN&series=16`
+Catalogue overview powering the Device Pricing tab's picker — one row per priced
+SKU (optionally filtered by series).
+```json
+{ "device_count": 70, "devices": [ {
+    "sku": "ip16-promax-256gb", "model": "iPhone 16 Pro Max", "variant": "Pro Max",
+    "storage": "256GB", "msrp": 150100, "listings": 21, "platforms": 6,
+    "lowest_price": 88900, "median_price": 99750, "fair_value": 97804,
+    "confidence": 0.95, "recommended_buy": 88390, "recommended_sell": 105628 } ] }
+```
+
+### `GET /devices/{sku}?region=IN`
+The full per-site breakdown for one device (404 if no listings). Contains:
+- `device` — identity + economics (`msrp`, `launch_date`, `age_months`,
+  `depreciation_pct`, `colors_seen`).
+- `valuation` / `fair_value` — condition-normalized fair value block.
+- `recommendations` — recommended buy/sell for every Maple grade.
+- `summary` — totals, lowest/median/highest asking, cheapest site.
+- `by_platform[]` — per site: `listings`, `lowest/median/highest_price`,
+  `comparable_median`, `vs_fair_value_pct`, `avg_seller_rating`, `verified_share_pct`.
+- `by_condition[]` — per grade: counts, median asking, avg battery, buy/sell.
+- `listings[]` — the full listing feed with all scrapable detail (`color`,
+  `battery_health`, `warranty`, `accessories`, `seller_name`, `seller_rating`,
+  `seller_reviews`, `lock_status`, `verified`, `negotiable`, `views`, `url`, …).
 
 ---
 

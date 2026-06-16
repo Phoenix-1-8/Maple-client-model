@@ -8,6 +8,7 @@ import { apiPost, endpoints } from "@/lib/api";
 const NAV = [
   { href: "/", label: "Executive", icon: "◆" },
   { href: "/competitors", label: "Competitors", icon: "▤" },
+  { href: "/devices", label: "Device Pricing", icon: "▦" },
   { href: "/dubai", label: "Dubai Expansion", icon: "⇄" },
   { href: "/inventory", label: "Inventory", icon: "▣" },
 ];

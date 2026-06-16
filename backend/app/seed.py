@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 from .config import get_config
 from .db import SessionLocal, init_db
 from .models import DeviceDaily, Listing, MarketDaily
-from .mock_data import build_rng, generate_history, generate_listings
+from .mock_data import build_rng, build_extra_rng, generate_history, generate_listings, generate_extended_listings
 from .scrapers import run_all_scrapers
 from .util import as_of_date
 
@@ -126,6 +126,7 @@ def seed_all(db: Session, force: bool = False, ignore_fixture: bool = False) -> 
 
     rng = build_rng(cfg)
     listings = generate_listings(cfg, as_of, rng)
+    listings += generate_extended_listings(cfg, as_of, build_extra_rng(cfg))
     market_daily, device_daily = generate_history(cfg, as_of, rng)
 
     _insert_listings(db, listings)
@@ -144,6 +145,7 @@ def refresh_market(db: Session) -> dict:
     """Re-scrape (mock fallback) and replace current listings."""
     as_of = as_of_date()
     listings, report = run_all_scrapers(as_of)
+    listings += generate_extended_listings(get_config(), as_of, build_extra_rng(get_config()))
 
     db.execute(delete(Listing))
     db.commit()

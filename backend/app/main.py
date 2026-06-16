@@ -3,7 +3,7 @@ Maple Store — AI Department API.
 
 FastAPI service exposing the market-intelligence brain:
   * scrapers + mock fallback
-  * 5 specialist agents
+  * 6 specialist agents
   * pricing recommendations & KPIs
 
 On startup it ensures the schema exists and seeds a full mock market so the
