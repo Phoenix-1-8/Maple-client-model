@@ -38,4 +38,11 @@ export const endpoints = {
   refresh: "/scrape/refresh",
   grades: "/normalization/grades",
   config: "/config",
+  // Maple vs Market (comparison angle)
+  mapleComparison: "/maple/comparison",
+  mapleComparisonOne: (sku: string) => `/maple/comparison/${sku}`,
+  // ML pricing layer
+  mlPricing: "/ml/pricing",
+  mlPricingOne: (sku: string) => `/ml/pricing/${sku}`,
+  mlForecast: "/ml/forecast",
 };

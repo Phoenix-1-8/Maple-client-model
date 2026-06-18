@@ -80,12 +80,19 @@ class BaseScraper:
                 return [self._postprocess(r) for r in raw], "live"
             raise ScrapeBlocked(f"{self.platform_key}: empty result")
         except Exception as exc:  # noqa: BLE001 - resilience by design
-            # Seed derived from platform so each scraper's mock stream is stable
-            # yet distinct (crc32: str hash() is randomized per process).
-            seed = self.cfg.infra.mock_seed + (zlib.crc32(self.platform_key.encode()) % 9973)
-            rng = random.Random(seed)
-            listings = generate_platform_listings(self.cfg, self.platform_key, as_of, rng)
-            return listings, "mock"
+            return self._mock_listings(as_of), "mock"
+
+    def _mock_listings(self, as_of: date) -> list[dict]:
+        """Synthetic-but-consistent listings used when the live scrape fails.
+
+        Overridable so a platform with bespoke economics (e.g. Maple's own
+        certified store) can supply its own generator.
+        """
+        # Seed derived from platform so each scraper's mock stream is stable
+        # yet distinct (crc32: str hash() is randomized per process).
+        seed = self.cfg.infra.mock_seed + (zlib.crc32(self.platform_key.encode()) % 9973)
+        rng = random.Random(seed)
+        return generate_platform_listings(self.cfg, self.platform_key, as_of, rng)
 
     def _postprocess(self, raw: dict) -> dict:
         """Normalize a raw scraped record into the canonical schema.

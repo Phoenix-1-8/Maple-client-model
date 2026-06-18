@@ -6,8 +6,21 @@ psycopg2-binary==2.9.10
 redis==5.2.1
 python-dotenv==1.0.1
 
-# Live scraping (OPTIONAL, not required for the demo — mock fallback works
-# without it). To wire it up, uncomment, then:
-#   pip install playwright && python -m playwright install chromium
-# and implement fetch_raw() in the scraper adapters (skeleton in scrapers/cashify.py).
-# playwright==1.49.1
+# --- ML pricing layer (lightweight statistical models) ---
+scikit-learn>=1.5
+numpy>=1.26
+pandas>=2.0
+joblib>=1.3
+
+# --- Live scraping ---
+# scrapling is the primary scraper: fast HTTP (Fetcher) for Shopify JSON
+# (maplestore.in) and a stealth browser (StealthyFetcher) for bot-protected
+# competitor sites (e.g. Cashify product pages -> ProductGroup JSON-LD).
+# The [fetchers] extra pulls the stealth-browser deps (patchright, msgspec,
+# protego); without them StealthyFetcher cannot import and every competitor
+# silently falls back to mock. After install, fetch the browser binary ONCE:
+#     python -m patchright install chromium
+# The mock fallback still works with no browser installed.
+scrapling[fetchers]>=0.4
+patchright>=1.50
+requests>=2.31

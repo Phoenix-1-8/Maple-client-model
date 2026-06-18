@@ -12,11 +12,13 @@ const ROLE_TONE: Record<string, any> = {
   recommerce: "maple",
   marketplace: "sky",
   tradein: "amber",
+  own: "violet",
 };
 const ROLE_COLOR: Record<string, string> = {
   recommerce: "#22c55e",
   marketplace: "#38bdf8",
   tradein: "#f59e0b",
+  own: "#a855f7",
 };
 const FAMILIES = ["iPhone", "iPad", "Mac", "Watch", "AirPods"];
 
@@ -134,9 +136,9 @@ function DeviceDetail({ d }: { d: any }) {
   for (const p of d.by_platform) platformName[p.platform] = p.platform_name;
 
   const barData = d.by_platform.map((p: any) => ({
-    label: p.platform_name,
+    label: p.is_own ? `★ ${p.platform_name}` : p.platform_name,
     value: p.median_price,
-    color: ROLE_COLOR[p.role] || "#64748b",
+    color: p.is_own ? "#a855f7" : ROLE_COLOR[p.role] || "#64748b",
   }));
 
   return (
@@ -206,9 +208,18 @@ function DeviceDetail({ d }: { d: any }) {
             </thead>
             <tbody>
               {d.by_platform.map((p: any) => (
-                <tr key={p.platform} className="row-hover border-b border-panel-line/50">
-                  <td className="td font-medium text-white">{p.platform_name}</td>
-                  <td className="td"><Badge tone={ROLE_TONE[p.role] || "slate"}>{p.role}</Badge></td>
+                <tr
+                  key={p.platform}
+                  className={`row-hover border-b border-panel-line/50 ${
+                    p.is_own ? "bg-violet-500/10 ring-1 ring-inset ring-violet-500/30" : ""
+                  }`}
+                >
+                  <td className={`td font-medium ${p.is_own ? "text-violet-200" : "text-white"}`}>
+                    {p.is_own && <span className="mr-1 text-violet-400">★</span>}
+                    {p.platform_name}
+                    {p.is_own && <span className="ml-2 text-[10px] uppercase tracking-wide text-violet-400">your store</span>}
+                  </td>
+                  <td className="td"><Badge tone={p.is_own ? "violet" : ROLE_TONE[p.role] || "slate"}>{p.role}</Badge></td>
                   <td className="td stat-num text-right">{p.listings}</td>
                   <td className="td stat-num text-right text-slate-400">{inr(p.lowest_price)}</td>
                   <td className="td stat-num text-right text-white">{inr(p.median_price)}</td>
@@ -293,8 +304,14 @@ function DeviceDetail({ d }: { d: any }) {
             </thead>
             <tbody>
               {d.listings.map((l: any, i: number) => (
-                <tr key={i} className="row-hover border-b border-panel-line/50">
-                  <td className="td font-medium text-slate-200">
+                <tr
+                  key={i}
+                  className={`row-hover border-b border-panel-line/50 ${
+                    l.is_own ? "bg-violet-500/10" : ""
+                  }`}
+                >
+                  <td className={`td font-medium ${l.is_own ? "text-violet-200" : "text-slate-200"}`}>
+                    {l.is_own && <span className="mr-1 text-violet-400">★</span>}
                     {platformName[l.platform] || l.platform}
                     {l.verified && <span className="ml-1.5 text-maple-400" title="Verified / inspected">✓</span>}
                   </td>

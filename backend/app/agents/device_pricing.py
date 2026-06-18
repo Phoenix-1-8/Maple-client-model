@@ -93,9 +93,15 @@ class DevicePricingAgent(Agent):
         if not listings:
             return None
 
+        # Fair value stays COMPETITOR-ONLY (own excluded) so the benchmark Maple
+        # is measured against is never contaminated by Maple's own prices.
         fv = self.valuations(db, region=region).get(sku)
         fair_value = fv.fair.fair_value if fv else 0.0
         recos = recommend_all_conditions(fair_value, self.cfg)
+
+        # …but the per-site table, the by-condition view and the listing feed DO
+        # include Maple's own store (flagged is_own) so it shows alongside the market.
+        listings = self.load_listings(db, region=region, sku=sku, include_own=True)
 
         asks = [l.asking_price for l in listings]
         cheapest = min(listings, key=lambda l: l.asking_price)
@@ -160,6 +166,7 @@ class DevicePricingAgent(Agent):
                     "platform": key,
                     "platform_name": pc.name if pc else key,
                     "role": pc.role if pc else "marketplace",
+                    "is_own": bool(pc and pc.role == "own"),
                     "currency": pc.currency if pc else "INR",
                     "listings": len(rows_in),
                     "lowest_price": round(min(asks)),
@@ -202,9 +209,11 @@ class DevicePricingAgent(Agent):
         return rows
 
     def _listing_feed(self, listings) -> list[dict]:
+        own_keys = {p.key for p in self.cfg.platforms if p.role == "own"}
         feed = []
         for l in sorted(listings, key=lambda x: x.asking_price):
             item = {k: getattr(l, k) for k in _LISTING_KEYS}
             item["listing_date"] = l.listing_date.isoformat()
+            item["is_own"] = l.platform in own_keys
             feed.append(item)
         return feed

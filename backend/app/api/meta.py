@@ -25,6 +25,7 @@ def health() -> dict:
 def config() -> dict:
     cfg = get_config()
     return {
+        "data_source": cfg.infra.data_source,
         "pricing": asdict(cfg.pricing),
         "baselines": asdict(cfg.baselines),
         "condition_multipliers": cfg.condition_multipliers,

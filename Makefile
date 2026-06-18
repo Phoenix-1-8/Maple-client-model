@@ -1,6 +1,6 @@
 # Maple Store AI Department — convenience targets
 
-.PHONY: up down backend frontend seed refresh dataset build-fixture install-backend install-frontend
+.PHONY: up down backend backend-real frontend seed refresh dataset build-fixture build-real-fixture train-model install-backend install-frontend
 
 # ---- Docker ----
 up:            ## Build & run the full stack
@@ -13,8 +13,11 @@ down:          ## Stop and remove volumes
 install-backend:
 	cd backend && python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
 
-backend:       ## Run the API locally (port 8000)
-	cd backend && . .venv/bin/activate && MAPLE_AS_OF=2026-06-11 uvicorn app.main:app --reload --port 8000
+backend:       ## Run the API locally with MOCK data (port 8000)
+	cd backend && . .venv/bin/activate && MAPLE_AS_OF=2026-06-11 MAPLE_DATA_SOURCE=mock uvicorn app.main:app --reload --port 8000
+
+backend-real:  ## Run the API locally with REAL scraped data (port 8000)
+	cd backend && . .venv/bin/activate && MAPLE_AS_OF=2026-06-16 MAPLE_DATA_SOURCE=real uvicorn app.main:app --reload --port 8000
 
 # ---- Local frontend ----
 install-frontend:
@@ -33,5 +36,11 @@ refresh:       ## Re-scrape (mock fallback) and replace listings
 dataset:       ## Export the mock dataset to backend/mock_dataset/
 	cd backend && . .venv/bin/activate && python -m scripts.export_mock_dataset --out mock_dataset
 
-build-fixture: ## Rebuild the committed pre-built DB fixture (app/fixtures/seed_market.json)
+build-fixture: ## Rebuild the committed MOCK DB fixture (app/fixtures/seed_market.json)
 	cd backend && . .venv/bin/activate && python -m scripts.build_seed_fixture
+
+build-real-fixture: ## Scrape live sources -> committed REAL fixture + ML model
+	cd backend && . .venv/bin/activate && python -m scripts.build_real_fixture
+
+train-model:   ## Re-train the ML pricing model from the seeded DB (mode via MAPLE_DATA_SOURCE)
+	cd backend && . .venv/bin/activate && python -m app.ml.train

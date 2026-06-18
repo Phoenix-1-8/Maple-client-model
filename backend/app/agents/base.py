@@ -43,13 +43,28 @@ class Agent:
 
     # ---- data access ---------------------------------------------------- #
     def load_listings(
-        self, db: Session, region: str | None = None, sku: str | None = None
+        self,
+        db: Session,
+        region: str | None = None,
+        sku: str | None = None,
+        include_own: bool = False,
     ) -> list[Listing]:
+        """Load listings for the market benchmark.
+
+        By default Maple's OWN-store listings (role == 'own') are excluded so the
+        competitor benchmark, fair value and every existing agent measure the
+        market — not Maple against itself. The Maple comparison agent opts in
+        with ``include_own=True``.
+        """
         stmt = select(Listing)
         if region:
             stmt = stmt.where(Listing.region == region)
         if sku:
             stmt = stmt.where(Listing.sku == sku)
+        if not include_own:
+            own = [p.key for p in self.cfg.platforms if p.role == "own"]
+            if own:
+                stmt = stmt.where(Listing.platform.not_in(own))
         return list(db.scalars(stmt))
 
     def group_by_sku(self, listings: list[Listing]) -> dict[str, list[Listing]]:

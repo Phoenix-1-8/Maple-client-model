@@ -54,6 +54,13 @@ class InfraSettings:
     mock_seed: int = int(os.getenv("MAPLE_MOCK_SEED", "42"))
     # How many days of synthetic market history to generate for trend charts.
     history_days: int = int(os.getenv("MAPLE_HISTORY_DAYS", "60"))
+    # Data source for the whole pilot:
+    #   "mock" -> deterministic synthetic market (committed seed_market.json)
+    #   "real" -> data scraped from live sources (committed seed_market_real.json)
+    # The two modes are independent: mock stays reproducible as a safe fallback
+    # demo; real reflects the live market (its index/fair-values legitimately
+    # differ from the mock headline).
+    data_source: str = os.getenv("MAPLE_DATA_SOURCE", "mock").strip().lower()
 
 
 # --------------------------------------------------------------------------- #
@@ -119,6 +126,15 @@ DEFAULT_GRADE_MAP: dict[str, str] = {
     "poor": "Fair",
     "heavily used": "Fair",
     "partially functional": "Fair",
+    # Maple's own-store vocabulary (maplestore.in product titles). A Maple
+    # "Pre-owned" unit is certified/tested, so it maps to the 'Superb' reference;
+    # a "Demo-unit" is near-new.
+    "pre-owned": "Superb",
+    "preowned": "Superb",
+    "certified pre-owned": "Superb",
+    "refurbished": "Superb",
+    "demo-unit": "Almost New",
+    "demo unit": "Almost New",
 }
 
 
@@ -126,6 +142,8 @@ DEFAULT_GRADE_MAP: dict[str, str] = {
 # Platform configuration
 # --------------------------------------------------------------------------- #
 # role:
+#   own         -> Maple's OWN store (maplestore.in). NOT a competitor — excluded
+#                  from the competitor market median; this is the price we justify.
 #   recommerce  -> refurbished retail (with warranty), sell-side reference
 #   marketplace -> C2C asking prices (optimistic, negotiable)
 #   tradein     -> buy-back / trade-in quotes (low, buy-side)
@@ -143,7 +161,13 @@ class PlatformConfig:
     currency: str = "INR"
 
 
+# The key of Maple's own store. Tracked as a data source, but excluded from the
+# competitor benchmark (the client is not its own competitor).
+MAPLE_OWN_KEY = "maple_store"
+
+
 DEFAULT_PLATFORMS: list[PlatformConfig] = [
+    PlatformConfig("maple_store", "Maple Store", "own", "IN", 1.00, 1.12),
     PlatformConfig("cashify", "Cashify", "recommerce", "IN", 1.00, 0.98),
     PlatformConfig("controlz", "ControlZ", "recommerce", "IN", 0.95, 1.02),
     PlatformConfig("olx", "OLX", "marketplace", "IN", 0.80, 0.92),
@@ -275,6 +299,17 @@ class MapleConfig:
 
     def platform_keys(self, region: str | None = None) -> list[str]:
         return [p.key for p in self.platforms if region is None or p.region == region]
+
+    def competitor_platforms(self, region: str | None = None) -> list[PlatformConfig]:
+        """Platforms that form the market benchmark (everything EXCEPT Maple's own store)."""
+        return [
+            p for p in self.platforms
+            if p.role != "own" and (region is None or p.region == region)
+        ]
+
+    def own_platform(self) -> PlatformConfig | None:
+        """Maple's own store (role == 'own'), if configured."""
+        return next((p for p in self.platforms if p.role == "own"), None)
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

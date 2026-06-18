@@ -9,6 +9,7 @@ interface Cell {
 interface Row {
   platform: string;
   platform_name: string;
+  is_own?: boolean;
   cells: Cell[];
 }
 
@@ -39,14 +40,22 @@ export function PriceHeatmap({ data }: { data: { series: number[]; rows: Row[] }
         </thead>
         <tbody>
           {data.rows.map((row) => (
-            <tr key={row.platform}>
-              <td className="td sticky left-0 z-[1] whitespace-nowrap bg-panel font-medium text-slate-200">
+            <tr key={row.platform} className={row.is_own ? "ring-1 ring-inset ring-violet-500/40" : ""}>
+              <td
+                className={`td sticky left-0 z-[1] whitespace-nowrap bg-panel font-medium ${
+                  row.is_own ? "text-violet-200" : "text-slate-200"
+                }`}
+              >
+                {row.is_own && <span className="mr-1 text-violet-400">★</span>}
                 {row.platform_name}
+                {row.is_own && (
+                  <span className="ml-1 text-[10px] uppercase tracking-wide text-violet-400">you</span>
+                )}
               </td>
               {row.cells.map((c) => (
                 <td
                   key={c.series}
-                  className="rounded-md text-center"
+                  className={`rounded-md text-center ${row.is_own ? "ring-1 ring-inset ring-violet-500/30" : ""}`}
                   style={{ background: cellColor(c.index) }}
                   title={
                     c.index !== null

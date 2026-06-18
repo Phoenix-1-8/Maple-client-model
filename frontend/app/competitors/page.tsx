@@ -27,10 +27,15 @@ export default function CompetitorsPage() {
   const hist = (index.data?.history || []).map((h: any) => ({ day: h.day, index: h.index }));
 
   const barData = rankings.map((r: any) => ({
-    label: r.platform_name,
+    label: r.is_own ? `★ ${r.platform_name}` : r.platform_name,
     value: r.median_price,
-    color:
-      r.price_index >= 1.04 ? "#f43f5e" : r.price_index >= 1.0 ? "#f59e0b" : "#22c55e",
+    color: r.is_own
+      ? "#a855f7"
+      : r.price_index >= 1.04
+      ? "#f43f5e"
+      : r.price_index >= 1.0
+      ? "#f59e0b"
+      : "#22c55e",
   }));
 
   return (
@@ -60,7 +65,7 @@ export default function CompetitorsPage() {
       <Panel className="mt-4">
         <SectionTitle
           title="Competitor Rankings"
-          subtitle="From aggressive-discount (buy-side) to premium (sell-side)"
+          subtitle="From aggressive-discount (buy-side) to premium (sell-side) · Maple shown in violet vs the competitor benchmark"
         />
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -78,11 +83,19 @@ export default function CompetitorsPage() {
             </thead>
             <tbody>
               {rankings.map((r: any, i: number) => (
-                <tr key={r.platform} className="row-hover border-b border-panel-line/50">
-                  <td className="td stat-num text-slate-500">{i + 1}</td>
-                  <td className="td font-medium text-white">{r.platform_name}</td>
+                <tr
+                  key={r.platform}
+                  className={`row-hover border-b border-panel-line/50 ${
+                    r.is_own ? "bg-violet-500/10 ring-1 ring-inset ring-violet-500/30" : ""
+                  }`}
+                >
+                  <td className="td stat-num text-slate-500">{r.is_own ? "★" : i + 1}</td>
+                  <td className={`td font-medium ${r.is_own ? "text-violet-200" : "text-white"}`}>
+                    {r.platform_name}
+                    {r.is_own && <span className="ml-2 text-[10px] uppercase tracking-wide text-violet-400">your store</span>}
+                  </td>
                   <td className="td">
-                    <Badge tone={ROLE_TONE[r.role] || "slate"}>{r.role}</Badge>
+                    <Badge tone={r.is_own ? "violet" : ROLE_TONE[r.role] || "slate"}>{r.role}</Badge>
                   </td>
                   <td className="td stat-num text-right">{r.listings}</td>
                   <td className="td stat-num text-right text-slate-400">{inr(r.lowest_price)}</td>
@@ -93,7 +106,7 @@ export default function CompetitorsPage() {
                         <div className="absolute left-1/2 top-0 h-full w-px bg-slate-600" />
                         <div
                           className={`h-full rounded-full ${
-                            r.price_index >= 1 ? "bg-amber-500" : "bg-maple-500"
+                            r.is_own ? "bg-violet-500" : r.price_index >= 1 ? "bg-amber-500" : "bg-maple-500"
                           }`}
                           style={{
                             width: `${Math.min(100, r.price_index * 50)}%`,

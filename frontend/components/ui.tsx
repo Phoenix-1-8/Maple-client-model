@@ -95,7 +95,7 @@ export function Badge({
   tone = "slate",
 }: {
   children: React.ReactNode;
-  tone?: "slate" | "maple" | "amber" | "rose" | "sky";
+  tone?: "slate" | "maple" | "amber" | "rose" | "sky" | "violet";
 }) {
   const tones: Record<string, string> = {
     slate: "border-slate-600/40 bg-slate-500/10 text-slate-300",
@@ -103,6 +103,7 @@ export function Badge({
     amber: "border-amber-500/40 bg-amber-500/10 text-amber-400",
     rose: "border-rose-500/40 bg-rose-500/10 text-rose-300",
     sky: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+    violet: "border-violet-500/50 bg-violet-500/15 text-violet-200",
   };
   return (
     <span

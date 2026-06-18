@@ -16,7 +16,7 @@ out/
 npm-debug.log*
 
 # Env
-.env
+backend/.env
 
 # OS / editors
 .DS_Store

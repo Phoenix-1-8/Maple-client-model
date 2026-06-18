@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState } from "react";
-import { apiPost, endpoints } from "@/lib/api";
+import React, { useEffect, useState } from "react";
+import { apiGet, apiPost, endpoints } from "@/lib/api";
 
 const NAV = [
   { href: "/", label: "Executive", icon: "◆" },
   { href: "/competitors", label: "Competitors", icon: "▤" },
   { href: "/devices", label: "Device Pricing", icon: "▦" },
+  { href: "/maple", label: "Maple vs Market", icon: "⚖" },
   { href: "/dubai", label: "Dubai Expansion", icon: "⇄" },
   { href: "/inventory", label: "Inventory", icon: "▣" },
 ];
@@ -17,6 +18,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [refreshing, setRefreshing] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGet(endpoints.config)
+      .then((c: any) => setDataSource(c?.data_source ?? null))
+      .catch(() => setDataSource(null));
+  }, []);
+
+  const isReal = dataSource === "real";
 
   async function refresh() {
     setRefreshing(true);
@@ -70,8 +80,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto space-y-2 px-1 pt-6 text-[11px] text-slate-600">
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-maple-500" />
-            <span className="text-slate-500">Live mock market</span>
+            <span
+              className={`h-1.5 w-1.5 animate-pulse rounded-full ${isReal ? "bg-sky-400" : "bg-maple-500"}`}
+            />
+            <span className="text-slate-500">
+              {dataSource === null ? "Connecting…" : isReal ? "Live scraped data" : "Mock market"}
+            </span>
           </div>
           <div>iPhone 13–17 · India + Dubai</div>
           <div className="text-slate-700">Demo pilot v1.0</div>
@@ -89,6 +103,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
             Continuous pre-owned iPhone market intelligence
           </div>
           <div className="flex items-center gap-3">
+            {dataSource && (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium ${
+                  isReal
+                    ? "border-sky-500/40 bg-sky-500/10 text-sky-300"
+                    : "border-slate-600/40 bg-slate-500/10 text-slate-300"
+                }`}
+                title={isReal ? "Data scraped live from maplestore.in + market" : "Deterministic synthetic market"}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${isReal ? "bg-sky-400" : "bg-slate-400"}`} />
+                {isReal ? "REAL DATA" : "MOCK DATA"}
+              </span>
+            )}
             {note && <span className="text-xs text-maple-400">{note}</span>}
             <button
               onClick={refresh}

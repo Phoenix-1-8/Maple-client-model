@@ -17,7 +17,9 @@ from .competitor import CompetitorIntelligenceAgent
 from .device_pricing import DevicePricingAgent
 from .dubai import DubaiExpansionAgent
 from .inventory import InventoryAgent
+from .maple_compare import MapleComparisonAgent
 from .market_pricing import MarketPricingAgent
+from .ml_pricing import MLPricingAgent
 
 
 AGENTS = {
@@ -27,6 +29,8 @@ AGENTS = {
     ArbitrageAgent.name: ArbitrageAgent,
     InventoryAgent.name: InventoryAgent,
     DubaiExpansionAgent.name: DubaiExpansionAgent,
+    MapleComparisonAgent.name: MapleComparisonAgent,
+    MLPricingAgent.name: MLPricingAgent,
 }
 
 

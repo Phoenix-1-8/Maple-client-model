@@ -31,10 +31,14 @@ services:
       DATABASE_URL: postgresql+psycopg2://maple:maple@db:5432/maple
       REDIS_URL: redis://redis:6379/0
       SEED_ON_STARTUP: "true"
+      # Data mode for the demo. "real" loads the committed real fixture
+      # (seed_market_real.json: live Maple + Cashify, modelled others). Switch to
+      # "mock" for the deterministic synthetic market (seed_market.json).
+      MAPLE_DATA_SOURCE: "real"
       # Pinned so the loaded fixture's baked dates line up with the app's
-      # "as-of" date (recency weighting, trend anchoring). Matches the fixture
-      # built by `make build-fixture`.
-      MAPLE_AS_OF: "2026-06-11"
+      # "as-of" date (recency weighting, trend anchoring). MUST match the fixture:
+      # real fixture was built with --as-of 2026-06-19; mock fixture uses 2026-06-11.
+      MAPLE_AS_OF: "2026-06-19"
       CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
     ports:
       - "8000:8000"
@@ -51,7 +55,8 @@ services:
       DATABASE_URL: postgresql+psycopg2://maple:maple@db:5432/maple
       REDIS_URL: redis://redis:6379/0
       SEED_ON_STARTUP: "false"
-      MAPLE_AS_OF: "2026-06-11"
+      MAPLE_DATA_SOURCE: "real"
+      MAPLE_AS_OF: "2026-06-19"
     depends_on:
       backend:
         condition: service_started

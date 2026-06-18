@@ -105,6 +105,64 @@ export function Sparkline({
   );
 }
 
+export function RetentionChart({
+  data,
+  height = 220,
+}: {
+  data: { age_months: number; retained_pct: number }[];
+  height?: number;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 8, right: 10, left: 6, bottom: 0 }}>
+        <defs>
+          <linearGradient id="retArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.5} />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid stroke={GRID} vertical={false} />
+        <XAxis
+          dataKey="age_months"
+          tick={{ fill: AXIS, fontSize: 11 }}
+          tickLine={false}
+          axisLine={{ stroke: GRID }}
+          tickFormatter={(v: number) => `${v}m`}
+          minTickGap={20}
+        />
+        <YAxis
+          tick={{ fill: AXIS, fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          domain={[0, 1]}
+          tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
+          width={38}
+        />
+        <Tooltip
+          content={({ active, payload }) =>
+            active && payload && payload.length ? (
+              <TipBox>
+                <div className="text-slate-400">{payload[0].payload.age_months} months old</div>
+                <div className="stat-num text-sm text-white">
+                  {(Number(payload[0].value) * 100).toFixed(0)}% of MSRP retained
+                </div>
+              </TipBox>
+            ) : null
+          }
+        />
+        <Area
+          type="monotone"
+          dataKey="retained_pct"
+          stroke="#38bdf8"
+          strokeWidth={2.5}
+          fill="url(#retArea)"
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function HBarChart({
   data,
   height = 260,

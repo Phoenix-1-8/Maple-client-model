@@ -30,11 +30,27 @@ from sqlalchemy.orm import Session
 from .config import get_config
 from .db import SessionLocal, init_db
 from .models import DeviceDaily, Listing, MarketDaily
-from .mock_data import build_rng, build_extra_rng, generate_history, generate_listings, generate_extended_listings
+from .mock_data import (
+    build_rng,
+    build_extra_rng,
+    build_maple_rng,
+    generate_history,
+    generate_listings,
+    generate_extended_listings,
+    generate_maple_listings,
+)
 from .scrapers import run_all_scrapers
 from .util import as_of_date
 
-FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "seed_market.json"
+FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
+FIXTURE_PATH = FIXTURE_DIR / "seed_market.json"            # mock (default)
+REAL_FIXTURE_PATH = FIXTURE_DIR / "seed_market_real.json"  # real (scraped)
+
+
+def fixture_path(cfg=None) -> Path:
+    """The fixture for the active data mode."""
+    cfg = cfg or get_config()
+    return REAL_FIXTURE_PATH if cfg.infra.data_source == "real" else FIXTURE_PATH
 
 # Columns stored as dates in the fixture, by table key, that must be parsed back
 # into date objects before bulk insert.
@@ -45,11 +61,11 @@ _DATE_FIELDS = {
 }
 
 
-def _use_fixture() -> bool:
-    """Prefer the committed fixture unless explicitly told to generate."""
+def _use_fixture(cfg=None) -> bool:
+    """Prefer the committed fixture (for the active mode) unless told to generate."""
     if os.getenv("MAPLE_SEED_SOURCE", "").strip().lower() == "generate":
         return False
-    return FIXTURE_PATH.exists()
+    return fixture_path(cfg).exists()
 
 
 def _parse_dates(rows: list[dict], fields: tuple[str, ...]) -> list[dict]:
@@ -61,9 +77,10 @@ def _parse_dates(rows: list[dict], fields: tuple[str, ...]) -> list[dict]:
     return rows
 
 
-def load_fixture(db: Session) -> dict:
-    """Load the pre-built market fixture into the (already wiped) database."""
-    data = json.loads(FIXTURE_PATH.read_text())
+def load_fixture(db: Session, cfg=None) -> dict:
+    """Load the pre-built market fixture (for the active mode) into the wiped DB."""
+    path = fixture_path(cfg)
+    data = json.loads(path.read_text())
     listings = _parse_dates(list(data["listings"]), _DATE_FIELDS["listings"])
     market = _parse_dates(list(data["market_daily"]), _DATE_FIELDS["market_daily"])
     devices = _parse_dates(list(data["device_daily"]), _DATE_FIELDS["device_daily"])
@@ -74,7 +91,7 @@ def load_fixture(db: Session) -> dict:
     db.commit()
     return {
         "seeded": True,
-        "source": "fixture",
+        "source": f"fixture:{(cfg or get_config()).infra.data_source}",
         "listings": len(listings),
         "market_days": len(market),
         "device_days": len(devices),
@@ -121,12 +138,13 @@ def seed_all(db: Session, force: bool = False, ignore_fixture: bool = False) -> 
     # Preferred path: load the committed pre-built fixture (deterministic, no
     # runtime generation). The fixture already includes the filled-in listing
     # counts, so there's no _update_today_counts step.
-    if not ignore_fixture and _use_fixture():
-        return load_fixture(db)
+    if not ignore_fixture and _use_fixture(cfg):
+        return load_fixture(db, cfg)
 
     rng = build_rng(cfg)
     listings = generate_listings(cfg, as_of, rng)
     listings += generate_extended_listings(cfg, as_of, build_extra_rng(cfg))
+    listings += generate_maple_listings(cfg, as_of, build_maple_rng(cfg))
     market_daily, device_daily = generate_history(cfg, as_of, rng)
 
     _insert_listings(db, listings)
@@ -142,10 +160,26 @@ def seed_all(db: Session, force: bool = False, ignore_fixture: bool = False) -> 
 
 
 def refresh_market(db: Session) -> dict:
-    """Re-scrape (mock fallback) and replace current listings."""
+    """Re-build current listings.
+
+    * real mode -> re-run the live scraper layer (per-platform mock fallback).
+    * mock mode -> regenerate the deterministic mock market offline (no network),
+      so the demo's "Refresh" stays instant and reproducible.
+    """
+    cfg = get_config()
     as_of = as_of_date()
-    listings, report = run_all_scrapers(as_of)
-    listings += generate_extended_listings(get_config(), as_of, build_extra_rng(get_config()))
+
+    if cfg.infra.data_source == "real":
+        listings, report = run_all_scrapers(as_of)
+        listings += generate_extended_listings(cfg, as_of, build_extra_rng(cfg))
+        live = sum(r["count"] for r in report if r["source"] == "live")
+        mock = sum(r["count"] for r in report if r["source"] == "mock")
+    else:
+        listings = generate_listings(cfg, as_of, build_rng(cfg))
+        listings += generate_extended_listings(cfg, as_of, build_extra_rng(cfg))
+        listings += generate_maple_listings(cfg, as_of, build_maple_rng(cfg))
+        report = [{"platform": "mock", "source": "mock", "count": len(listings)}]
+        live, mock = 0, len(listings)
 
     db.execute(delete(Listing))
     db.commit()
@@ -155,10 +189,9 @@ def refresh_market(db: Session) -> dict:
     _update_today_counts(db, as_of)
     db.commit()
 
-    live = sum(r["count"] for r in report if r["source"] == "live")
-    mock = sum(r["count"] for r in report if r["source"] == "mock")
     return {
         "refreshed": True,
+        "data_source": cfg.infra.data_source,
         "total_listings": len(listings),
         "live_listings": live,
         "mock_listings": mock,

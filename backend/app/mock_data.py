@@ -125,7 +125,18 @@ def _listing_detail(
     color = lrng.choice(_colors_for(family, series, variant))
     role = platform.role
 
-    if role == "recommerce":
+    if role == "own":
+        # Maple's own store: certified pre-owned with a Maple warranty.
+        seller_name = "Maple Store"
+        seller_rating = round(lrng.uniform(4.6, 4.9), 1)
+        seller_reviews = lrng.randint(1200, 9000)
+        warranty = "6-month Maple warranty"
+        accessories = lrng.choice(_REFURB_ACCESSORIES)
+        verified = True
+        negotiable = False
+        views = lrng.randint(150, 6000)
+        title = f"{device.model} - {storage} - {color} - Pre-owned"
+    elif role == "recommerce":
         seller_name = f"{platform.name} Certified"
         seller_rating = round(lrng.uniform(4.4, 4.9), 1)
         seller_reviews = lrng.randint(800, 16000)
@@ -287,8 +298,9 @@ def generate_platform_listings(
     return listings
 
 
-def _make_listing(cfg, device, platform, true_val, as_of, rng) -> dict:
-    condition = _condition_for(device_age_months(device, as_of), rng)
+def _make_listing(cfg, device, platform, true_val, as_of, rng, condition=None) -> dict:
+    if condition is None:
+        condition = _condition_for(device_age_months(device, as_of), rng)
     city = _pick_city(platform.region, rng, platform.key)
     cond_mult = cfg.condition_multipliers[condition]
     city_mult = cfg.city_multipliers.get(city, 1.0)
@@ -350,9 +362,16 @@ def _make_listing(cfg, device, platform, true_val, as_of, rng) -> dict:
 
 
 def generate_listings(cfg: MapleConfig, as_of: date, rng: random.Random) -> list[dict]:
-    """Generate the full mock market across every configured platform."""
+    """Generate the full mock market across every configured COMPETITOR platform.
+
+    Maple's own store (role == 'own') is generated separately by
+    ``generate_maple_listings`` on a dedicated RNG, so it never perturbs the
+    competitor RNG stream and is excluded from the competitor benchmark.
+    """
     listings: list[dict] = []
     for platform in cfg.platforms:
+        if platform.role == "own":
+            continue
         listings.extend(generate_platform_listings(cfg, platform.key, as_of, rng))
     return listings
 
@@ -413,6 +432,58 @@ def generate_history(
     return market_daily, device_daily
 
 
+def generate_history_real(
+    cfg: MapleConfig, as_of: date, fair_today: dict[str, float], rng: random.Random
+) -> tuple[list[dict], list[dict]]:
+    """Back-cast market history anchored to TODAY's real fair values.
+
+    A one-shot scrape has no past, so we reconstruct a credible (and clearly
+    *modeled*) history: today's per-device fair value is the real scraped value;
+    earlier days apply the same gentle market sentiment and the depreciation
+    shape (older = slightly more retained value), so the trend charts read
+    honestly without pretending we scraped the past.
+    """
+    days = max(1, cfg.infra.history_days)
+    sentiment = _sentiment_series(days, rng)  # normalized so today == 1.0
+    start = as_of - timedelta(days=days - 1)
+    devices = [d for d in iphone_devices() if d.sku in fair_today]
+
+    device_daily: list[dict] = []
+    basket_by_day: list[float] = []
+    for i in range(days):
+        d = start + timedelta(days=i)
+        s = sentiment[i]
+        basket = 0.0
+        for dev in devices:
+            anchor = fair_today[dev.sku]
+            # Aging factor relative to today (units were younger in the past).
+            age_factor = depreciation(device_age_months(dev, d)) / depreciation(
+                device_age_months(dev, as_of)
+            )
+            fv = round(anchor * s * age_factor * math.exp(rng.gauss(0.0, 0.006)), 0)
+            device_daily.append({
+                "day": d, "sku": dev.sku, "series": dev.series, "model": dev.model,
+                "variant": dev.variant, "storage": dev.storage,
+                "fair_value": fv, "listing_count": 0,
+            })
+            basket += fv
+        basket_by_day.append(basket)
+
+    base = basket_by_day[0] or 1.0
+    market_daily: list[dict] = []
+    prev_index = 0.0
+    for i in range(days):
+        d = start + timedelta(days=i)
+        index_value = round(100.0 * basket_by_day[i] / base, 2)
+        movement = round((index_value - prev_index) / prev_index * 100, 2) if prev_index else 0.0
+        market_daily.append({
+            "day": d, "index_value": index_value, "prev_index_value": round(prev_index, 2),
+            "movement_pct": movement, "total_active_listings": 0,
+        })
+        prev_index = index_value
+    return market_daily, device_daily
+
+
 def build_rng(cfg: MapleConfig | None = None) -> random.Random:
     cfg = cfg or get_config()
     return random.Random(cfg.infra.mock_seed)
@@ -422,6 +493,58 @@ def build_extra_rng(cfg: MapleConfig | None = None) -> random.Random:
     """Separate RNG for extended devices, so iPhone RNG stream stays identical."""
     cfg = cfg or get_config()
     return random.Random(cfg.infra.mock_seed + 1)
+
+
+def build_maple_rng(cfg: MapleConfig | None = None) -> random.Random:
+    """Separate RNG for Maple's own-store listings (keeps competitor stream identical)."""
+    cfg = cfg or get_config()
+    return random.Random(cfg.infra.mock_seed + 2)
+
+
+# Maple sells CERTIFIED pre-owned, so its condition mix skews high (no 'Fair').
+_MAPLE_CONDITION_WEIGHTS = {"Almost New": 0.28, "Superb": 0.52, "Good": 0.20}
+
+
+def _maple_condition(rng: random.Random) -> str:
+    grades = list(_MAPLE_CONDITION_WEIGHTS)
+    return _weighted_choice(rng, grades, [_MAPLE_CONDITION_WEIGHTS[g] for g in grades])
+
+
+def generate_maple_listings(cfg: MapleConfig, as_of: date, rng: random.Random) -> list[dict]:
+    """Synthesize Maple's OWN-store iPhone inventory (mock mode).
+
+    Mirrors what the real maplestore.in Shopify scrape produces: certified
+    pre-owned units priced at Maple's retail level (platform.index). Excluded
+    from the competitor benchmark; consumed only by the Maple comparison tab.
+    """
+    platform = cfg.own_platform()
+    if platform is None:
+        return []
+    listings: list[dict] = []
+    for device in iphone_devices():
+        true_val = true_superb_value(device, as_of)
+        # Maple stocks the catalogue but not every SKU deeply.
+        expected = (
+            2.6
+            * _SERIES_LIQUIDITY[device.series]
+            * _VARIANT_POP[device.variant]
+            * _STORAGE_POP[device.storage]
+        )
+        count = max(0, int(round(expected * rng.uniform(0.6, 1.3))))
+        for _ in range(count):
+            listing = _make_listing(
+                cfg, device, platform, true_val, as_of, rng,
+                condition=_maple_condition(rng),
+            )
+            # Present like a real maplestore.in product.
+            listing["raw_condition"] = "Pre-owned"
+            listing["seller_type"] = "maple_store"
+            listing["url"] = (
+                f"https://maplestore.in/products/"
+                f"{device.model.lower().replace(' ', '-')}-{device.storage.lower()}-{rng.randint(1000, 9999)}"
+            )
+            listings.append(listing)
+    return listings
 
 
 # Family popularity weights for listing count estimation.
@@ -448,8 +571,9 @@ def generate_extended_listings(cfg: MapleConfig, as_of: date, rng: random.Random
     """Generate mock listings for non-iPhone devices (IN region only)."""
     listings: list[dict] = []
     for platform in cfg.platforms:
-        # Only include IN-region platforms (skip Dubai for extended devices)
-        if platform.region != "IN":
+        # Only include IN-region platforms (skip Dubai for extended devices).
+        # Maple's own store is handled separately by generate_maple_listings.
+        if platform.region != "IN" or platform.role == "own":
             continue
         for device in EXTRA_DEVICES:
             true_val = true_superb_value(device, as_of)

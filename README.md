@@ -26,13 +26,29 @@ investor-grade dashboards:
 | 🔀 **Arbitrage** | Finds buy-low/sell-high spreads across Indian cities (e.g. *Hyderabad ₹82.9k → Mumbai ₹95.1k, +14.8%*) and totals the opportunity value. |
 | 📦 **Inventory** | Surfaces high-demand models, underpriced acquisition targets, oversupplied stock and coverage gaps, with pricing recommendations. |
 | ⇄ **Dubai Expansion** | Compares India vs Dubai prices, computes landed-cost margin after duty, and scores export opportunities. |
+| ⚖ **Maple vs Market** | Compares Maple's OWN store prices (scraped from maplestore.in) against market fair value & competitor median per device, and decomposes the premium Maple charges into what's *justified* (certification + warranty + trust). |
+| 🤖 **ML Pricing** | A lightweight scikit-learn model (gradient boosting + one-hot) learned from the live market: fair value with confidence, learned condition/city/platform effects, a depreciation curve and a short forecast. An *additive* second opinion alongside the formula engine. |
 
-### The five dashboards
+### The six dashboards
 - **Executive** — market index + movement, headline buy/sell recommendation, KPI strip, top arbitrage, demand & underpriced.
 - **Competitor** — rankings, pricing heatmap, median-by-platform, 60-day trend.
 - **Device Pricing** — searchable device picker, per-site price table, median-by-site chart, buy/sell-by-condition, and a full per-listing detail feed.
+- **Maple vs Market** — Maple's own price vs market fair value & competitor median per device, premium % + verdict, the justification breakdown, and the ML Price-Intelligence panel (depreciation curve + forecast).
 - **Dubai Expansion** — India⇄Dubai spreads, export table, margin waterfall.
 - **Inventory** — demand signals, buy/sell recommendations, underpriced & oversupplied, gaps.
+
+### Data modes — mock vs real
+The pilot runs in two interchangeable modes, selected with **`MAPLE_DATA_SOURCE`**:
+
+| Mode | What it is | Index | Use |
+|---|---|---|---|
+| `mock` *(default)* | Deterministic synthetic market from a committed fixture. | Pinned **96.43** | Reliable, offline, byte-identical demo. |
+| `real` | Maple's real catalogue scraped from **maplestore.in** (Shopify JSON) + best-effort competitors (mock fallback), snapshotted to a committed fixture. | Computed from real data | The live story. |
+
+The active mode is shown as a badge in the header ("MOCK DATA" / "REAL DATA"). Maple's
+own listings are tracked as an `own`-role source and are **excluded from the competitor
+benchmark** (the client isn't its own competitor). Rebuild the real snapshot any time with
+`make build-real-fixture` (re-scrapes + retrains the ML model).
 
 ---
 
@@ -52,7 +68,11 @@ docker compose up --build
 cd maple-pilot/backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-MAPLE_AS_OF=2026-06-11 uvicorn app.main:app --port 8000
+# MOCK data (default, offline, deterministic):
+MAPLE_AS_OF=2026-06-11 MAPLE_DATA_SOURCE=mock uvicorn app.main:app --port 8000
+# …or REAL scraped data (loads the committed real fixture):
+# MAPLE_AS_OF=2026-06-16 MAPLE_DATA_SOURCE=real uvicorn app.main:app --port 8000
+# (or simply `make backend` / `make backend-real`)
 
 # Terminal 2 — frontend
 cd maple-pilot/frontend
@@ -139,7 +159,8 @@ central estimate — see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 | Backend | Python · FastAPI · SQLAlchemy |
 | Database | PostgreSQL (SQLite-compatible for local) |
 | Queue | Redis + worker (synchronous fallback) |
-| Scraping | Playwright · BrightData-compatible · mock fallback |
+| Scraping | **Scrapling** (HTTP `Fetcher` for Shopify JSON · `StealthyFetcher` for bot-protected sites) · mock fallback |
+| ML | scikit-learn (gradient boosting + one-hot) · joblib artifact |
 | Deploy | Docker + Docker Compose |
 
 ---
@@ -157,8 +178,9 @@ maple-pilot/
 │       ├── mock_data.py       # internally-consistent market generator
 │       ├── metrics.py         # board KPIs
 │       ├── models.py / db.py / seed.py
-│       ├── scrapers/          # 7 adapters + resilient base + registry
-│       ├── agents/            # 6 agents + orchestrator
+│       ├── scrapers/          # 8 adapters (incl. maplestore.in) + resilient base
+│       ├── agents/            # 8 agents (incl. Maple-compare + ML) + orchestrator
+│       ├── ml/                # scikit-learn pricing model (features · model · train)
 │       ├── api/               # FastAPI routers
 │       └── workers/           # Redis queue + worker
 ├── frontend/
@@ -175,8 +197,11 @@ maple-pilot/
 
 The architecture is built to grow:
 
-1. **Turn on live scraping** — implement `fetch_raw()` per adapter (Playwright
-   skeleton included), set `BRIGHTDATA_WSS`. Mock fallback stays as a safety net.
+1. **Live scraping is wired** — `MAPLE_DATA_SOURCE=real` already scrapes Maple's
+   own catalogue (maplestore.in Shopify JSON, via Scrapling). Competitor adapters
+   attempt a real `StealthyFetcher` scrape and fall back to mock per-platform;
+   harden each `fetch_raw()` (and run `python -m camoufox fetch` once for the
+   stealth browser) to take them fully live. Mock fallback stays as a safety net.
 2. **Add platforms** — drop a new `BaseScraper` subclass and register it; add a
    `PlatformConfig` row. Agents pick it up automatically.
 3. **Schedule** — the Redis worker already consumes a `refresh_market` job; wire

@@ -10,10 +10,12 @@ from .cashify import CashifyScraper
 from .controlz import ControlZScraper
 from .dubai import DubaiResaleScraper
 from .facebook import FacebookScraper
+from .maplestore import MapleStoreScraper
 from .olx import OLXScraper
 from .quikr import QuikrScraper
 
 SCRAPER_CLASSES: list[type[BaseScraper]] = [
+    MapleStoreScraper,
     CashifyScraper,
     ControlZScraper,
     OLXScraper,
